@@ -1,4 +1,4 @@
-
+var E = 2.718281828459045
 
 module.exports = Stork
 
@@ -16,42 +16,69 @@ function Stork (opts) {
   //scaling constant for temperature reduction
   opts.alpha = 0.9
   //max # of iterations to wait for an improving solution
-  opts.coolTime = opts.coolTime || 20
+  opts.stability = opts.stability || 20
 
   this.opts = opts
 }
 
 Stork.prototype.solve = function () {
+  var t1 = Date.now()
   var self = this
 
-  this.usedPatience = 0
+  //# iterations since a new beter solution was found
+  this.stability = 0
+  this.temperature = this.opts.temperature
   //generate initial solution which is
   //random ordering of customers
   this.solution = this.getRandomSolution()
   this.cost = this.getCost(this.solution)
-  this.temperature = this.opts.temperature
 
   console.log('initial solution:', this.solution, 'cost:', this.cost)
 
-  do {
+  while ( !this.isCooled() ) {
     //run 2 iterations at each temperature
     var n = 0
-    do {
+    
+    while ( n <= 2 ) {
+      this.stability++
       //get neighboring solution
-      this.solution = this.getPermutation()
-      this.cost = this.getCost(this.solution)
+      var neighbor = this.getPermutation()
+        , cost = this.getCost(neighbor)
+        , deltaCost = cost - this.cost
 
-      console.log('permutation:', this.solution, 'cost:', this.cost)
+      if (deltaCost < 0) {
+        //accept this solution; it's a better one
+        this.solution = neighbor
+        this.cost = cost
+        this.stability = 0
 
+        console.log('\ngot better solution. Accepting.')
+      } else {
+        //determine whether to accept this worse solution
+        var x = Math.random()
+          , prob = Math.pow(E, -deltaCost/this.temperature)
 
+        console.log('\ngot worse solution. deltaCost: %s prob: %s', deltaCost, prob)
+
+        if (x < prob) {
+          console.log('accepting worse solution')
+          this.solution = neighbor
+          this.cost = cost
+          this.stability = 0
+        } else {
+          console.log('rejecting worse solution')
+        }
+      }
+
+      console.log('solution:', this.solution, 'cost:', this.cost, 'stability', this.stability)
       n++
-    } while ( n <= 2 )
+    }  
 
     //reduce temperature
     this.reduceTemperature(this.opts.method)
-  } while ( !this.isCooled() )  //iterate til patience exhausted
+  }
 
-  console.log('final solution', this.solution)
+  console.log('final solution', this.solution, 'cost:', this.cost)
 }
 
 //
@@ -62,14 +89,20 @@ Stork.prototype.reduceTemperature = function (method) {
 }
 
 //check if the system is cool (patience has been exhausted)
-//increase used patience for faiure to find
-//a better solution
 Stork.prototype.isCooled = function () {
-  this.coolTime++
-  if (this.coolTime < this.opts.coolTime)
-    return false
-  else
+  var isStable = this.stability > this.opts.stability
+  var isCool = this.temperature < 0.1
+
+
+  if (isStable) 
+    console.log('system is stable : 20 non-improving iterations')
+  if (isCool) 
+    console.log('system is less than 0.1 temperature')
+
+  if (isStable && isCool)
     return true
+  else
+    return false
 }
 
 //
@@ -81,30 +114,32 @@ Stork.prototype.getPermutation = function () {
     return Math.floor(max*Math.random())
   }
 
-  //rand route indices
-  var aRow = randRange(this.solution.length)
-    , bRow = randRange(this.solution.length)
-
-  //choose random routes to swap a customer pair
-  var aRoute = this.solution[aRow]
-    , bRoute = this.solution[bRow]
-
+  var aRoute = bRoute = null
   var aCust = bCust = 0
   var aIndex = bIndex = 0
 
   //make sure to get a valid swap
   do {
+    //rand route indices
+    var aRow = randRange(this.solution.length)
+      , bRow = randRange(this.solution.length)
+
+    //choose random routes to swap a customer pair from
+    aRoute = this.solution[aRow]
+    bRoute = this.solution[bRow]
+
     //rand customer indices
     aIndex = randRange(aRoute.length)
     bIndex = randRange(bRoute.length)
 
+    //customers to swap
     aCust = aRoute[aIndex]
     bCust = bRoute[bIndex]
   } while (aRoute === bRoute && aCust === bCust)
 
-  //make the swap
   var sol = [].slice.call(this.solution)
 
+  //make the swap
   sol[aRow][aIndex] = bCust
   sol[bRow][bIndex] = aCust
 
