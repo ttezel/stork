@@ -28,7 +28,7 @@ Stork.prototype.solve = function () {
   //generate initial solution which is
   //random ordering of customers
   this.solution = this.getRandomSolution()
-  this.cost = this.getCost()
+  this.cost = this.getCost(this.solution)
   this.temperature = this.opts.temperature
 
   console.log('initial solution:', this.solution, 'cost:', this.cost)
@@ -39,7 +39,7 @@ Stork.prototype.solve = function () {
     do {
       //get neighboring solution
       this.solution = this.getPermutation()
-      this.cost = this.getCost()
+      this.cost = this.getCost(this.solution)
 
       console.log('permutation:', this.solution, 'cost:', this.cost)
 
@@ -52,6 +52,13 @@ Stork.prototype.solve = function () {
   } while ( !this.isCooled() )  //iterate til patience exhausted
 
   console.log('final solution', this.solution)
+}
+
+//
+//  reduce self's temperature
+//
+Stork.prototype.reduceTemperature = function (method) {
+  this.temperature = this.temperature*this.opts.alpha
 }
 
 //check if the system is cool (patience has been exhausted)
@@ -69,57 +76,47 @@ Stork.prototype.isCooled = function () {
 //  Get a neighboring solution
 //
 Stork.prototype.getPermutation = function () {
-  //flatten the solution
-  var flat = []
-    , routeLengths = []
 
-  this.solution.forEach(function (route) {
-    flat = flat.concat(route)
-    routeLengths.push(route.length)
-  })
-
-  //determine swap to make
-  var swap1 = Math.floor(flat.length*Math.random())
-    , swap2 = swap1
-
-  while (swap2 === swap1) {
-    swap2 = Math.floor(flat.length*Math.random())
+  function randRange (max) {
+    return Math.floor(max*Math.random())
   }
 
-  var val1 = flat[swap1]
-    , val2 = flat[swap2]
+  //rand route indices
+  var aRow = randRange(this.solution.length)
+    , bRow = randRange(this.solution.length)
 
-  flat[swap2] = val1
-  flat[swap1] = val2
+  //choose random routes to swap a customer pair
+  var aRoute = this.solution[aRow]
+    , bRoute = this.solution[bRow]
 
-  //reconstruct permutated solution
-  var sol = []
+  var aCust = bCust = 0
+  var aIndex = bIndex = 0
 
-  var start = 0
-    , end = 0
+  //make sure to get a valid swap
+  do {
+    //rand customer indices
+    aIndex = randRange(aRoute.length)
+    bIndex = randRange(bRoute.length)
 
-  routeLengths.forEach(function (routeLength, routeNum) {
-    end += routeLength
-    sol[routeNum] = flat.slice(start, end)
-    start += routeLength
-  })
+    aCust = aRoute[aIndex]
+    bCust = bRoute[bIndex]
+  } while (aRoute === bRoute && aCust === bCust)
+
+  //make the swap
+  var sol = [].slice.call(this.solution)
+
+  sol[aRow][aIndex] = bCust
+  sol[bRow][bIndex] = aCust
 
   return sol
 }
 
-//
-//  reduce self's temperature
-//
-Stork.prototype.reduceTemperature = function (method) {
-  this.temperature = this.temperature*this.opts.alpha
-}
-
 //cost is the sum of distances of the routes
-Stork.prototype.getCost = function () {
+Stork.prototype.getCost = function (solution) {
   var self = this
     , dist = 0
     , prev = null
-  this.solution.forEach(function (route) {
+  solution.forEach(function (route) {
     route.forEach(function (customer) {
       if (prev) {
         //add customer-to-customer distance
