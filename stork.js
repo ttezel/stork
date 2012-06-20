@@ -2,7 +2,6 @@ var E = 2.718281828459045
 
 module.exports = Stork
 
-//
 function Stork (opts) {
   if (!Array.isArray(opts.customers) )
     throw new Error('customers must be Array')
@@ -14,15 +13,19 @@ function Stork (opts) {
   //initial temperature
   opts.temperature = opts.temperature || 0.9
   //scaling constant for temperature reduction
-  opts.alpha = 0.9
+  opts.alpha = 0.99
   //max # of iterations to wait for an improving solution
   opts.stability = opts.stability || 20
 
   this.opts = opts
 }
 
+//
+//  solve the problem, 
+//
 Stork.prototype.solve = function () {
   var t1 = Date.now()
+  var i = 0
   var self = this
 
   //# iterations since a new beter solution was found
@@ -57,8 +60,11 @@ Stork.prototype.solve = function () {
         //determine whether to accept this worse solution
         var x = Math.random()
           , prob = Math.pow(E, -deltaCost/this.temperature)
+          , deltaChar = String.fromCharCode(916)
 
-        console.log('\ngot worse solution. deltaCost: %s prob: %s', deltaCost, prob)
+        var template = '\ngot worse solution. %s cost: %s temp: %s acceptance prob: %s'
+
+        console.log(template, deltaChar, deltaCost, this.temperature, prob)
 
         if (x < prob) {
           console.log('accepting worse solution')
@@ -70,15 +76,19 @@ Stork.prototype.solve = function () {
         }
       }
 
-      console.log('solution:', this.solution, 'cost:', this.cost, 'stability', this.stability)
+      console.log('solution #', i, ':', this.solution)
+      console.log('cost:', this.cost, 'stability:', this.stability)
       n++
+      i++
     }  
 
     //reduce temperature
     this.reduceTemperature(this.opts.method)
   }
 
-  console.log('final solution', this.solution, 'cost:', this.cost)
+  var elapsed = Date.now() - t1
+
+  return { solution: this.solution, cost: this.cost, elapsed: elapsed }
 }
 
 //
@@ -93,11 +103,10 @@ Stork.prototype.isCooled = function () {
   var isStable = this.stability > this.opts.stability
   var isCool = this.temperature < 0.1
 
-
   if (isStable) 
-    console.log('system is stable : 20 non-improving iterations')
+    console.log('system is stable (>', this.opts.stability, 'non-improving iterations)')
   if (isCool) 
-    console.log('system is less than 0.1 temperature')
+    console.log('system is cooled (< than 0.1 temperature)')
 
   if (isStable && isCool)
     return true
@@ -222,4 +231,9 @@ var opts = {
   ]
 }
 
-var stork = new Stork(opts).solve()
+var stork = new Stork(opts)
+
+var result = stork.solve()
+
+console.log('\nsolution result:', result.solution)
+console.log('cost: %s, elapsed: %s ms', result.cost, result.elapsed)
