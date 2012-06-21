@@ -14,14 +14,17 @@ function Stork (opts) {
   opts.temperature = opts.temperature || 0.9
   //scaling constant for temperature reduction
   opts.alpha = 0.99
-  //max # of iterations to wait for an improving solution
+  //# of iterations for solution to be considered stable
   opts.stability = opts.stability || 20
+
+  //max length for acceptable routes
+  opts.maxRouteLength = opts.maxRouteLength || 0
 
   this.opts = opts
 }
 
 //
-//  solve the problem, 
+//  solve the problem
 //
 Stork.prototype.solve = function () {
   var t1 = Date.now()
@@ -31,8 +34,8 @@ Stork.prototype.solve = function () {
   //# iterations since a new beter solution was found
   this.stability = 0
   this.temperature = this.opts.temperature
-  //generate initial solution which is
-  //random ordering of customers
+
+  //generate initial solution (random solution)
   this.solution = this.getRandomSolution()
   this.cost = this.getCost(this.solution)
 
@@ -92,23 +95,42 @@ Stork.prototype.solve = function () {
 }
 
 //
-//  reduce self's temperature
+//  reduce own temperature
 //
 Stork.prototype.reduceTemperature = function (method) {
   this.temperature = this.temperature*this.opts.alpha
 }
 
-//check if the system is cool (patience has been exhausted)
+//check if system is cool, stable, and solution is acceptable
 Stork.prototype.isCooled = function () {
+  var self = this
+
   var isStable = this.stability > this.opts.stability
   var isCool = this.temperature < 0.1
+  
+  var isAcceptable = true
+
+  //if required, check that
+  //all of the routes are of acceptable length
+  if (this.opts.maxRouteLength) {
+    isAcceptable = this.solution.every(function (route) {
+      //is route length acceptable?
+      var len = self.getRouteDistance(route)
+      if (len < self.opts.maxRouteLength)
+        return true
+      else
+        return false
+    })
+  }
 
   if (isStable) 
     console.log('system is stable (>', this.opts.stability, 'non-improving iterations)')
   if (isCool) 
     console.log('system is cooled (< than 0.1 temperature)')
+  if (isAcceptable)
+    console.log('system routes are within acceptable length')
 
-  if (isStable && isCool)
+  if (isStable && isCool && isAcceptable)
     return true
   else
     return false
@@ -155,30 +177,41 @@ Stork.prototype.getPermutation = function () {
   return sol
 }
 
+//
+//  route (Array) -> distance (Number)
+//
+Stork.prototype.getRouteDistance = function (route) {
+  var dist = 0
+    , first = route[0]
+
+  //add distance from depot to first customer in route
+  dist += this.opts.depot[first]
+  var prev = first
+
+  //add the customer-to-customer distances
+  for (var i = 1, j = route.length; i < j; i++) {
+    var customer = route[i]
+    dist += this.opts.distances[prev][customer]
+    prev = customer
+  }
+
+  //add distance to return to depot
+  dist += this.opts.depot[prev]
+
+  return dist
+}
+
 //cost is the sum of distances of the routes
+//
+//  (solution) -> cost (Number)
+//
 Stork.prototype.getCost = function (solution) {
   var self = this
-    , dist = 0
-    , prev = null
+    , cost = 0
   solution.forEach(function (route) {
-    route.forEach(function (customer) {
-      if (prev) {
-        //add customer-to-customer distance
-        dist += self.opts.distances[prev][customer]
-      } else {
-        //we are starting from the depot
-        //so add depot distance
-        dist += self.opts.depot[customer]
-      }
-      prev = customer
-    })
-    //we accounted for the last customer
-    //now add distance to return to depot
-    customer = route[route.length-1]
-    dist += self.opts.depot[customer]
-    prev = null
+    cost += self.getRouteDistance(route)
   })
-  return dist
+  return cost
 }
 
 //
@@ -214,7 +247,9 @@ Stork.prototype.getRandomSolution = function () {
 //
 
 var opts = {
-  customers: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
+  numWorkers: 3
+, maxRouteLength: 15
+, customers: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
 , distances: [
     [ 0, 10, 9, 2, 4, 3, 3, 10, 8 ]
   , [ 10, 0, 2, 10, 9, 8, 9, 2, 4 ]
