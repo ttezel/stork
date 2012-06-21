@@ -20,6 +20,9 @@ function Stork (opts) {
   //max length for acceptable routes
   opts.maxRouteLength = opts.maxRouteLength || 0
 
+  //penalty for route length overage
+  opts.lengthPenalty = opts.lengthPenalty || 10
+
   this.opts = opts
 }
 
@@ -104,6 +107,7 @@ Stork.prototype.reduceTemperature = function (method) {
 //check if system is cool, stable, and solution is acceptable
 Stork.prototype.isCooled = function () {
   var self = this
+    , maxLen = this.opts.maxRouteLength
 
   var isStable = this.stability > this.opts.stability
   var isCool = this.temperature < 0.1
@@ -112,11 +116,11 @@ Stork.prototype.isCooled = function () {
 
   //if required, check that
   //all of the routes are of acceptable length
-  if (this.opts.maxRouteLength) {
+  if (maxLen && maxLen > 0) {
     isAcceptable = this.solution.every(function (route) {
       //is route length acceptable?
       var len = self.getRouteDistance(route)
-      if (len < self.opts.maxRouteLength)
+      if (len < maxLen)
         return true
       else
         return false
@@ -201,15 +205,27 @@ Stork.prototype.getRouteDistance = function (route) {
   return dist
 }
 
-//cost is the sum of distances of the routes
+//  cost is the sum of distances of the routes PLUS:
+//  if a route in the solution is too long,
+//  cost is increased according to
+//
+//  self.opts.lengthPenalty*(distance overage)
 //
 //  (solution) -> cost (Number)
 //
 Stork.prototype.getCost = function (solution) {
   var self = this
     , cost = 0
+    , maxLen = this.opts.maxRouteLength
+
   solution.forEach(function (route) {
-    cost += self.getRouteDistance(route)
+    var dist = self.getRouteDistance(route)
+    cost += dist
+
+    //penalize length overage (if there is one)    
+    if (maxLen && dist > maxLen) {
+      cost += self.opts.lengthPenalty*(dist-maxLen)
+    }
   })
   return cost
 }
