@@ -55,10 +55,10 @@ Stork.prototype.solve = function () {
   console.log('initial solution:', this.solution, 'cost:', this.cost)
 
   while ( !this.isCooled() ) {
-    //run 2 iterations at each temperature
+    //run 5 iterations at each temperature
     var n = 0
     
-    while ( n <= 2 ) {
+    while ( n <= 5 ) {
       this.stability++
       //get neighboring solution
       var neighbor = this.getPermutation()
@@ -129,7 +129,7 @@ Stork.prototype.isCooled = function () {
 
   //if required, check that
   //all of the routes are of acceptable length
-  if (maxLen && maxLen > 0) {
+  if (maxLen > 0) {
     isAcceptable = this.solution.every(function (route) {
       //is route length acceptable?
       var len = self.getRouteDistance(route)
@@ -236,7 +236,7 @@ Stork.prototype.getCost = function (solution) {
     cost += dist
 
     //penalize length overage (if there is one)    
-    if (maxLen && dist > maxLen) {
+    if (maxLen > 0 && dist > maxLen) {
       cost += self.opts.lengthPenalty*(dist-maxLen)
     }
   })
