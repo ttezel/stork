@@ -11,6 +11,10 @@ function Stork (opts) {
   opts.numWorkers = opts.numWorkers || 3
   //initial temperature
   opts.temperature = opts.temperature || 0.9
+  //iterations to run per temperature value
+  opts.iterPerTemp = 5
+  //temperature for system to be considered cold
+  opts.coolTemp = 0.1
   //scaling constant for temperature reduction
   opts.alpha = 0.99
   //# of iterations for solution to be considered stable
@@ -55,10 +59,10 @@ Stork.prototype.solve = function () {
   console.log('initial solution:', this.solution, 'cost:', this.cost)
 
   while ( !this.isCooled() ) {
-    //run 5 iterations at each temperature
+    //run n iterations at each temperature
     var n = 0
     
-    while ( n <= 5 ) {
+    while ( n <= this.opts.iterPerTemp ) {
       this.stability++
       //get neighboring solution
       var neighbor = this.getPermutation()
@@ -123,7 +127,7 @@ Stork.prototype.isCooled = function () {
     , maxLen = this.opts.maxRouteLength
 
   var isStable = this.stability > this.opts.stability
-  var isCool = this.temperature < 0.1
+  var isCool = this.temperature < this.opts.coolTemp
   
   var isAcceptable = true
 
