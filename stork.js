@@ -12,13 +12,13 @@ function Stork (opts) {
   //initial temperature
   opts.temperature = opts.temperature || 0.9
   //iterations to run per temperature value
-  opts.iterPerTemp = 5
+  opts.iterPerTemp = 10
   //temperature for system to be considered cold
   opts.coolTemp = 0.1
   //scaling constant for temperature reduction
   opts.alpha = 0.99
   //# of iterations for solution to be considered stable
-  opts.stability = opts.stability || 20
+  opts.stability = opts.stability || 100
 
   //max length for acceptable routes
   opts.maxRouteLength = opts.maxRouteLength || 0
@@ -47,6 +47,7 @@ Stork.prototype.solve = function () {
   var t1 = Date.now()
   var i = 0
   var self = this
+  var deltaChar = String.fromCharCode(916)
 
   //# iterations since a new beter solution was found
   this.stability = 0
@@ -75,12 +76,11 @@ Stork.prototype.solve = function () {
         this.cost = cost
         this.stability = 0
 
-        console.log('\ngot better solution. Accepting.')
+        console.log('\ngot better solution. %s cost: %s. Accepting.', deltaChar, deltaCost)
       } else {
         //determine whether to accept this worse solution
         var x = Math.random()
           , prob = Math.pow(E, -deltaCost/this.temperature)
-          , deltaChar = String.fromCharCode(916)
 
         var template = '\ngot worse solution. %s cost: %s temp: %s acceptance prob: %s'
 
@@ -145,11 +145,11 @@ Stork.prototype.isCooled = function () {
   }
 
   if (isStable) 
-    console.log('system is stable (>', this.opts.stability, 'non-improving iterations)')
+    console.log('system is stable (> %s non-improving iterations)', this.opts.stability)
   if (isCool) 
-    console.log('system is cooled (< than 0.1 temperature)')
+    console.log('system is cooled (< %s temperature)', this.opts.coolTemp)
   if (isAcceptable)
-    console.log('system routes are within acceptable length')
+    console.log('system routes are acceptable length (< %s)', this.opts.maxRouteLength)
 
   if (isStable && isCool && isAcceptable)
     return true
@@ -160,8 +160,10 @@ Stork.prototype.isCooled = function () {
 //
 //  Get a neighboring solution
 //
+//  with 50% chance: randomly moves a customer from one worker to another worker
+//  with 50% chance: randomly swaps two customers
+//
 Stork.prototype.getPermutation = function () {
-
   var sol = [].slice.call(this.solution)
     , choice = Math.random()
     , numWorkers = sol.length
@@ -170,7 +172,6 @@ Stork.prototype.getPermutation = function () {
   var aRoute = bRoute = null
   var aIndex = bIndex = 0
   var aCust = bCust = 0
-  
 
   function randRange (max) {
     return Math.floor(max*Math.random())

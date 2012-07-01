@@ -7,7 +7,7 @@ var Stork = require('./stork')
 
 var opts = {
   numWorkers: 3
-, maxRouteLength: 15
+, maxRouteLength: 25
 , customers: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
 , distances: [
     [ 0, 10, 9, 2, 4, 3, 3, 10, 8 ]
