@@ -157,44 +157,78 @@ Stork.prototype.isCooled = function () {
     return false
 }
 
+var EYE = 0
+
 //
 //  Get a neighboring solution
 //
 Stork.prototype.getPermutation = function () {
 
+  var sol = [].slice.call(this.solution)
+    , choice = Math.random()
+    , numWorkers = sol.length
+
+  var aRow = bRow = 0
+  var aRoute = bRoute = null
+  var aIndex = bIndex = 0
+  var aCust = bCust = 0
+  
+
   function randRange (max) {
     return Math.floor(max*Math.random())
   }
 
-  var aRoute = bRoute = null
-  var aCust = bCust = 0
-  var aIndex = bIndex = 0
+  if (choice < 0.5) { 
+    //move 1 customer to another worker
 
-  //make sure to get a valid swap
-  do {
-    //rand route indices
-    var aRow = randRange(this.solution.length)
-      , bRow = randRange(this.solution.length)
+    //make sure to get 2 different rows and first row is non-empty
+    do {
+      aRow = randRange(numWorkers)
+      bRow = randRange(numWorkers)
 
-    //choose random routes to swap a customer pair from
-    aRoute = this.solution[aRow]
-    bRoute = this.solution[bRow]
+      //routes to swap between
+      aRoute = sol[aRow]
+      bRoute = sol[bRow]
 
-    //rand customer indices
+    } while (aRow === bRow || aRoute.length === 0)
+
+    //rand customer index from aRow
     aIndex = randRange(aRoute.length)
-    bIndex = randRange(bRoute.length)
-
-    //customers to swap
     aCust = aRoute[aIndex]
-    bCust = bRoute[bIndex]
-  } while (aRoute === bRoute && aCust === bCust)
 
-  var sol = [].slice.call(this.solution)
+    //choose random spot to insert aCust in bRoute (inclusive)
+    bIndex = randRange(bRoute.length+1)
+    
+    //move customer from aRow to bRow
+    sol[aRow].splice(aIndex, 1)
+    sol[bRow].splice(bIndex, 0, aCust)
+  } else {  
+    //swap 2 customers
 
-  //make the swap
-  sol[aRow][aIndex] = bCust
-  sol[bRow][bIndex] = aCust
+    //make sure to get a valid swap
+    do {
+      //rand route indices
+      aRow = randRange(numWorkers)
+      bRow = randRange(numWorkers)
 
+      //choose random routes to swap a customer pair from
+      aRoute = sol[aRow]
+      bRoute = sol[bRow]
+
+      //rand customer indices
+      aIndex = randRange(aRoute.length)
+      bIndex = randRange(bRoute.length)
+
+      //customers to swap
+      aCust = aRoute[aIndex]
+      bCust = bRoute[bIndex]
+    } while (aRow === bRow && aIndex === bIndex || aRoute.length === 0 || bRoute.length === 0)
+
+    //make the swap
+    sol[aRow][aIndex] = bCust
+    sol[bRow][bIndex] = aCust
+  }
+  
   return sol
 }
 
@@ -203,7 +237,11 @@ Stork.prototype.getPermutation = function () {
 //
 Stork.prototype.getRouteDistance = function (route) {
   var dist = 0
-    , first = route[0]
+  
+  if (route.length === 0)
+    return dist
+
+  var first = route[0]
 
   //add distance from depot to first customer in route
   dist += this.opts.depot[first]
@@ -262,7 +300,7 @@ Stork.prototype.getRandomSolution = function () {
     return aNum - bNum
   })
 
-  //distribute customers to our workers
+  //assign customers to our workers (equally distributed)
   cust.forEach(function (customer, index) {
     var worker = index%numWorkers
     if (!solution[worker])
