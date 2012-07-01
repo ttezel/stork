@@ -157,8 +157,6 @@ Stork.prototype.isCooled = function () {
     return false
 }
 
-var EYE = 0
-
 //
 //  Get a neighboring solution
 //
