@@ -18,11 +18,9 @@ function Stork (opts) {
   //scaling constant for temperature reduction
   opts.alpha = 0.99
   //# of iterations for solution to be considered stable
-  opts.stability = opts.stability || 100
-
+  opts.stability = opts.stability || 200
   //max length for acceptable routes
   opts.maxRouteLength = opts.maxRouteLength || 0
-
   //penalty for route length overage
   opts.lengthPenalty = opts.lengthPenalty || 10
 
