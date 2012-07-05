@@ -2,7 +2,26 @@ $(function () {
 
   console.log('at demo.js')
 
+  var palette = [ '87CEEB', 'FFFFE0', 'FFC0CB', '00FF7F', 'FFA07A', 'B57EDC' ]
+
+  var $elapsed = $('#elapsed')
+    , $cost = $('#cost')
+    , $solution = $('#solution')
+
+  //stork input arrays
+  var distances = []
+    , depot = []
+
+  //render map in container
+  var map = new Map('#map-canvas')
+
   var depotLoc = 'Waterloo, ON'
+
+  //render depot on map
+  map.geocode(depotLoc, function (err, res) {
+    if (err) return console.log('google geocode error:', err)
+    map.makeMarker(res[0].geometry.location, '000000')
+  })
 
   var customers = [
     '200 University Ave West, Waterloo ON'
@@ -16,27 +35,28 @@ $(function () {
   , 'MKV, Waterloo ON'
   ]
 
-  var distances = []
-
   var locations = [].slice.call(customers)
   locations.unshift(depotLoc)
 
+  //get distance matrix from google
   var service = new google.maps.DistanceMatrixService()
 
-  service.getDistanceMatrix(
-    {
-      origins: locations,
-      destinations: locations,
-      travelMode: google.maps.TravelMode.DRIVING,
-      avoidHighways: false,
-      avoidTolls: false
-    }, cb);
+  var matrixOpts = {
+    origins: locations
+  , destinations: locations
+  , travelMode: google.maps.TravelMode.DRIVING
+  , avoidHighways: false
+  , avoidTolls: false
+  }
 
+  service.getDistanceMatrix(matrixOpts, cb);
+
+  //make REST API call to stork app and render solution in map
   function cb (res, status) {
     if (status !== google.maps.DistanceMatrixStatus.OK)
       return console.log('got google status:', status)
 
-    //success
+    //success - format google's data for REST API call to stork
     var origins = res.originAddresses
       , dests = res.destinationAddresses 
 
@@ -52,8 +72,6 @@ $(function () {
       })
     })
 
-    var depot = []
-
     //remove depot from distance matrix
     distances.shift()
     distances.forEach(function (row) {
@@ -61,99 +79,67 @@ $(function () {
       depot.push(first)
     })
 
-    console.log('distances', distances)
-    console.log('depot', depot)
+    //build customers array for stork input
+    var custs = []
+      , num = distances.length
 
+    while (num--) {
+      custs.push(num)
+    }
+    custs.reverse()
+
+    //stork solution opts
     var opts = {
       numWorkers: 3
-    , customers: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
+    , customers: custs
     , distances: distances
     , depot: depot
-    , maxRouteLength: 10000
-    , lengthPenalty: 1000
+    , maxRouteLength: 20000
+    , lengthPenalty: 10
+    , stability: 1000
+    , verbose: true
     }
 
-    var stork = new Stork(opts)
-
-    var result = stork.solve()
-
-    var $elapsed = $('#elapsed')
-      , $cost = $('#cost')
-      , $solution = $('#solution')
-
-    $elapsed.text('Elapsed time: '+result.elapsed+' ms')
-    $cost.text('Cost: '+result.cost/1000+' km')
-    $solution.text('Solution:')
-
-    var palette = [ '87CEEB', 'FFFFE0', 'FFC0CB', '00FF7F', 'FFA07A', 'B57EDC' ]
-
-    // //render solution on map
-    var options = { zoom: 12, mapTypeId: google.maps.MapTypeId.ROADMAP }
-    var container = $('#map-canvas')[0]
-
-    var gmap = new google.maps.Map(container, options)
-    var geocoder = new google.maps.Geocoder()
-
-    //helper to draw marker on map
-    function makeMarker (latLng, color) {
-      var pinUrl = 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|'+color
-      var pin = new google.maps.MarkerImage(
-        pinUrl
-      , new google.maps.Size(21, 34)
-      , new google.maps.Point(0,0)
-      , new google.maps.Point(10, 34)
-      )
-
-      var shadowUrl = 'http://chart.apis.google.com/chart?chst=d_map_pin_shadow'
-      var shadow = new google.maps.MarkerImage(
-        shadowUrl
-      , new google.maps.Size(40, 37)
-      , new google.maps.Point(0, 0)
-      , new google.maps.Point(12, 35)
-      )
-      var marker = new google.maps.Marker({ position: latLng, map: gmap, icon: pin, shadow: shadow })
-
-      gmap.setCenter(latLng)
-
-      return marker
+    $.ajax({
+      type: 'POST'
+    , url: '/solve'
+    , data: JSON.stringify(opts)
+    , headers: {
+      'content-type': 'application/json'
     }
-
-    function geocode (address, cb) {
-      geocoder.geocode(
-          { address: address }
-        , function (res, status) {
-          if (status !== google.maps.GeocoderStatus.OK) 
-            return cb(status)
-
-          return cb(null, res)
-        })
-    }
-
-    geocode(depotLoc, function (err, res) {
-      if (err) return console.log('google geocode error:', err)
-
-      makeMarker(res[0].geometry.location, '000000')
     })
+    .success(function (data) {
+      var result = data
 
-    //render solution on map
-    result.solution.forEach(function (route, k) {
-      var $route = $('<div class="route">')
+      //render solution info in left column
+      $elapsed.text('Elapsed time: '+result.elapsed+' ms')
+      $cost.text('Cost: '+result.cost/1000+' km')
+      $solution.text('Solution:')
 
-      var txt = route.map(function (cust) { return customers[cust] }).join(' -> ')
+      //render solution on map
+      result.solution.forEach(function (route, k) {
+        var $route = $('<div class="route">')
 
-      $route.text(txt)
-      $route.css('background-color', '#'+palette[k])
-      $route.appendTo($solution)
+        var txt = route.map(function (cust) { return customers[cust] }).join(' -> ')
 
-      //render routes on map
-      route.forEach(function (cust, c) {
-        geocode(customers[cust], function (err, res) {
-          if (err) return console.log('google geocode error:', err)
-          //successful geocoding - show on map
-          var marker = makeMarker(res[0].geometry.location, palette[k])
-          marker.title = c.toString() +' - '+customers[c]
-        })  
+        //paint routes according to worker
+        $route.text(txt)
+        $route.css('background-color', '#'+palette[k])
+        $route.appendTo($solution)
+
+        //render routes on map
+        route.forEach(function (cust, c) {
+          map.geocode(customers[cust], function (err, res) {
+            if (err) return console.log('google geocode error:', err)
+            //successful geocoding - show marker on map
+            var marker = map.makeMarker(res[0].geometry.location, palette[k])
+            marker.title = c.toString() +' - '+customers[c]
+          })  
+        })
       })
+    })
+    .error(function (err) {
+      console.log('POST error:', err)
     })
   }
 })

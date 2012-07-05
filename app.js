@@ -1,6 +1,7 @@
 var http = require('http')
   , path = require('path')
   , express = require('express')
+  , Stork = require('./stork')
 
 function App (opts) {
   this.opts = opts
@@ -12,8 +13,9 @@ function App (opts) {
 App.prototype.configure = function () {
   var app = this.app
   app.configure('development', function(){
-    app.use(express.static(__dirname + '/public'));
-    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+    app.use(express.bodyParser())
+    app.use(express.static(__dirname + '/public'))
+    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }))
   })
 }
 
@@ -23,6 +25,22 @@ App.prototype.registerRoutes = function () {
 
   app.get('/', function (req, res) {
     res.sendfile(path.resolve(__dirname, 'views/map.html'))
+  })
+  app.post('/solve', function (req, res) {
+    var opts = req.body
+
+    console.log('query', opts)
+
+
+
+    var stork = new Stork(opts)
+    var result = stork.solve()
+
+
+    console.log('result', result)
+
+    res.json(result)
+    res.end()
   })
 }
 
