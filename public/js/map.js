@@ -1,6 +1,7 @@
 function Map (el) {
   this.el = el
   this.markers = []
+  this.paths = []
   var opts = { zoom: 12, mapTypeId: google.maps.MapTypeId.ROADMAP }
   var container = $(el)[0]
   this.gmap = new google.maps.Map(container, opts)
@@ -30,6 +31,12 @@ Map.prototype.makeMarker = function (latLng, color) {
   return marker
 }
 
+Map.prototype.makePolyline = function (path, color) {
+  var polyline = new google.maps.Polyline({ map: this.gmap, path: path, strokeColor: color })
+  this.paths.push(polyline)
+  return polyline
+}
+
 Map.prototype.geocode = function (address, cb) {
   this.geocoder.geocode({ address: address }, onComplete)
 
@@ -39,6 +46,16 @@ Map.prototype.geocode = function (address, cb) {
 
     return cb(null, res)
   }
+}
+
+Map.prototype.clear = function () {
+  this.markers.forEach(function (marker) {
+    marker.setMap(null)
+  })
+  
+  this.paths.forEach(function (path) {
+    path.setMap(null)
+  })
 }
 
 //expose Map globally

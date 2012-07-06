@@ -1,14 +1,15 @@
-var Stork = require('../public/js/stork')
+var Stork = require('../stork')
 
 //
 //  tests
 //
-
-var opts = {
-  numWorkers: 3
-, maxRouteLength: 20
-, customers: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
-, distances: [
+var testCases = [
+  {
+    numWorkers: 3
+  , maxRouteLength: 20
+  , customers: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
+  , verbose: true
+  , distances: [
     [ 0, 10, 9, 2, 4, 3, 3, 10, 8 ]
   , [ 10, 0, 2, 10, 9, 8, 9, 2, 4 ]
   , [ 9, 2, 0, 8, 5, 6, 6, 3, 4 ]
@@ -19,14 +20,36 @@ var opts = {
   , [ 10, 2, 3, 8, 7, 4, 9, 0, 3 ]
   , [ 8, 4, 4, 5, 6, 2, 7, 3, 0 ]
   ]
-, depot: [
-  3, 3, 3, 3, 2, 3, 3, 4, 3 
+  , depot: [ 3, 3, 3, 3, 2, 3, 3, 4, 3 ]
+  },
+
+  { numWorkers: 3
+  , customers: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
+  , depotLoc: 'Waterloo, ON'
+  , maxRouteLength: 20000
+  , lengthPenalty: 10
+  , stability: 1000
+  , verbose: false
+  , distances: [
+    [ 0, 3084, 2024, 1950, 2128, 799, 1541, 1260, 2103 ]
+  , [ 5639, 0, 1060, 3777, 3956, 2626, 3369, 3087, 4088 ]
+  , [ 3063, 1060, 0, 3336, 3514, 2185, 2927, 2646, 4394 ]
+  , [ 1318, 4402, 3342, 0, 476, 1151, 409, 1241, 3289 ]
+  , [ 1496, 4580, 3520, 476, 0, 1329, 587, 1420, 2813 ]
+  , [ 167, 3251, 2191, 1151, 1329, 0, 742, 461, 2270 ]
+  , [ 909, 3993, 2933, 409, 587, 742, 0, 833, 3012 ]
+  , [ 628, 3712, 2652, 1241, 1700, 461, 833, 0, 1807 ]
+  , [ 2009, 4532, 3472, 3273, 2797, 1882, 2625, 1790, 0 ] 
   ]
-}
+  , depot: [ 3314, 3360, 2300, 1420, 1840, 2515, 1773, 2606, 4035 ] 
+  }
 
-var stork = new Stork(opts)
+]
 
-var result = stork.solve()
+testCases.forEach(function (opts) {
+  var stork = new Stork(opts)
+  var result = stork.solve()
+  console.log('\nelapsed time: %s ms. Cost: %s', result.elapsed, result.cost)
+  console.log('solution:', result.solution)
+})
 
-console.log('\nelapsed time: %s ms. Cost: %s', result.elapsed, result.cost)
-console.log('solution:', result.solution)

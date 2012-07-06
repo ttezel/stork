@@ -29,15 +29,10 @@ App.prototype.registerRoutes = function () {
   app.post('/solve', function (req, res) {
     var opts = req.body
 
-    console.log('query', opts)
-
-
+    console.log('opts', opts)
 
     var stork = new Stork(opts)
     var result = stork.solve()
-
-
-    console.log('result', result)
 
     res.json(result)
     res.end()

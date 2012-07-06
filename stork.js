@@ -1,5 +1,6 @@
 // math constant 'e'
 var E = 2.718281828459045
+
 var deltaChar = String.fromCharCode(916)
 
 function Stork (opts) {
@@ -13,7 +14,7 @@ function Stork (opts) {
   //initial temperature
   opts.temperature = opts.temperature || 0.9
   //iterations to run per temperature value
-  opts.iterPerTemp = 10
+  opts.iterPerTemp = 5
   //temperature for system to be considered cold
   opts.coolTemp = 0.1
   //scaling constant for temperature reduction

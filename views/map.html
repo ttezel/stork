@@ -9,6 +9,7 @@
   </head>
   <body>
     <div id="info">
+      <h2>Solution</h2>
       <div id="elapsed"></div>
       <div id="cost"></div>
       <div id="solution"></div>
@@ -16,10 +17,21 @@
     <div id="map-canvas">
     </div>
     <div id="options">
-      <div id="depot-label"></div>
-      <input id="depot" type="text" value="Waterloo, ON" />
-      <div id="customers-label"></div>
+      <h2>Options</h2>
+      <div id="depot-label">Depot Location</div>
+      <input id="depot" type="text"/>
+      <div id="customers-label">Customer Locations (1 per line)</div>
       <textarea id="customers"></textarea>
+      <div id="numWorkers-label"># Workers</div>
+      <input id="numWorkers" type="text" />
+      <div id="maxRouteLength-label">Max Route Length</div>
+      <input id="maxRouteLength" type="text" />
+      <div id="lengthPenalty-label">Length Overage Penalty</div>
+      <input id="lengthPenalty" type="text" />
+      <div id="stability-label">Stability</div>
+      <input id="stability" type="text" />
+      <button id="submit" >Submit</button>
+      <div id="errorMessage"></div>
     </div>
   </body>
 </html>
