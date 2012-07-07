@@ -1,0 +1,22 @@
+{
+    "name": "stork"
+  , "description": "Solves the Vehicle Routing Problem"
+  , "version": "0.0.1"
+  , "author": "Tolga Tezel"
+  , "keywords": ["routing", "map", "delivery"]
+  , "dependencies": { 
+    "express": ">=3.0.0beta5" 
+  }
+  , "devDependencies": {
+
+  }
+  , "engines": { "node": ">=0.8.0" }
+  , "main": "./stork"
+  , "repository": {
+        "type": "git"
+      , "url": "http://github.com/ttezel/stork.git"
+    }
+  , "scripts": {
+      "test": "node test/test.js"
+    }
+}
