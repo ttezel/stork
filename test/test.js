@@ -1,4 +1,5 @@
-var Stork = require('../stork')
+var http = require('http')
+  , Stork = require('../stork')
 
 //
 //  tests
@@ -8,7 +9,7 @@ var testCases = [
     numWorkers: 3
   , maxRouteLength: 20
   , customers: [ 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
-  , verbose: true
+  , verbose: false
   , distances: [
     [ 0, 10, 9, 2, 4, 3, 3, 10, 8 ]
   , [ 10, 0, 2, 10, 9, 8, 9, 2, 4 ]
@@ -46,10 +47,36 @@ var testCases = [
 
 ]
 
+//start the app
+new Stork({ port: 8000 }).start()
+
+var reqOpts = {
+  host: '127.0.0.1'
+, port: 8000
+, path: '/solve'
+, method: 'POST'
+, headers: {
+    'content-type': 'application/json'
+  }
+}
+
 testCases.forEach(function (opts) {
-  var stork = new Stork(opts)
-  var result = stork.solve()
-  console.log('\nelapsed time: %s ms. Cost: %s', result.elapsed, result.cost)
-  console.log('solution:', result.solution)
+  var req = http.request(reqOpts, function (res) {
+    var data = ''
+    res.on('data', function (chunk) {
+     data += chunk 
+    })
+    res.on('end', function () {
+      console.log('client got', data)
+    })
+  })
+  req.on('error', function (err) {
+    console.log('http client request error:', err)
+  })
+  console.log('opts', JSON.stringify(opts))
+  req.end(JSON.stringify(opts))
+
+  // console.log('\nelapsed time: %s ms. Cost: %s', result.elapsed, result.cost)
+  // console.log('solution:', result.solution)
 })
 
