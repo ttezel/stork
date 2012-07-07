@@ -1,12 +1,12 @@
 #`Stork`
 
-#Solves Vehicle Routing Problems
+##Solves Vehicle Routing Problems
 
 ![](https://dl.dropbox.com/u/32773572/stork-map1.png)
 
 Given a `depot` location and a set of `customer` locations, `Stork` will tell you an optimized route for your vehicles to take.
 
-`Stork` uses the Google Maps API to get a distance matrix from the locations, and uses [Simulated Annealing]() to determine the routes for your vehicles to take.
+`Stork` uses the Google Maps API to get a distance matrix from the locations, and uses [Simulated Annealing](http://en.wikipedia.org/wiki/Simulated_annealing) to determine the routes for your vehicles to take.
 
 ##Install
 
@@ -24,7 +24,7 @@ var stork = new Stork({ port: 8000 }).start()
 
 Now you can go to `127.0.0.1:8000` in your browser, and use the web app.
 
-You can also query the REST API. 
+You can also query the **REST** API. 
 
 Stork exposes one REST resource:
 
